@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     
-    <title>FLX Calc - Protocolo de Elite</title>
+    <title>SHEIKO - Protocolo de Elite</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563EB">
     <meta name="description" content="Calculadora de Carga e Aquecimento para Powerlifting e Musculação">
@@ -16,8 +16,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Chart.js e Plugin de DataLabels -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap"
@@ -54,8 +54,10 @@
     <div id="root"></div>
 
     <script type="text/babel">
-      // Registrar o plugin do Chart.js
-      Chart.register(ChartDataLabels);
+      // Registrar o plugin do Chart.js com segurança
+      if (window.Chart && window.ChartDataLabels) {
+        Chart.register(ChartDataLabels);
+      }
 
       // --- ÍCONES ---
       const Dumbbell = ({ className, size = 24 }) => (
@@ -150,40 +152,6 @@
           <line x1='12' x2='12.01' y1='16' y2='16' />
         </svg>
       );
-      const ChevronDown = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <path d='m6 9 6 6 6-6' />
-        </svg>
-      );
-      const Layers = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <polygon points='12 2 2 7 12 12 22 7 12 2' />
-          <polyline points='2 17 12 22 22 17' />
-          <polyline points='2 12 12 17 22 12' />
-        </svg>
-      );
 
       // --- COMPONENTE DO GRÁFICO ---
       const WarmupChart = ({ sets, workLoad }) => {
@@ -266,7 +234,7 @@
                   pointHoverRadius: 6,
                   tension: 0.1,
                   fill: true,
-                  clip: false, // <--- CRUCIAL: Impede que bolinhas nas bordas sejam cortadas
+                  clip: false, // Impede que bolinhas nas bordas sejam cortadas
                 },
               ],
             },
@@ -275,7 +243,7 @@
               maintainAspectRatio: false,
               layout: {
                 padding: {
-                  top: 40, // Aumentado um pouco para garantir espaço para a etiqueta preta
+                  top: 40, 
                   right: 30, 
                   left: 30,  
                   bottom: 15
@@ -362,7 +330,6 @@
 
         if (sets.length === 0) return null;
 
-        // Aumentado de h-44 para h-48 (~10% maior)
         return (
           <div className="w-full h-48 bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6 relative">
              <div className="absolute top-4 left-4 z-10">
@@ -373,35 +340,27 @@
         );
       };
 
-      // --- APLICATIVO ---
-      const FLXCalc = () => {
+      // --- APLICATIVO SHEIKO ---
+      const SheikoApp = () => {
         const [workLoad, setWorkLoad] = React.useState('');
         const [sets, setSets] = React.useState([]);
         const [completed, setCompleted] = React.useState([]);
-        const [exercise, setExercise] = React.useState('agachamento');
-        const [backoffSets, setBackoffSets] = React.useState(null);
-
-        const allExercises = [
-          { id: 'agachamento', label: 'Agachamento' },
-          { id: 'supino', label: 'Supino' },
-          { id: 'terra', label: 'Levantamento Terra' },
-          { id: 'desenvolvimento', label: 'Desenvolvimento' },
-          { id: 'remada', label: 'Remada' },
-        ];
 
         const roundToTen = (val) => Math.round(val / 10) * 10;
         const roundToFive = (val) => Math.round(val / 5) * 5;
 
-        // --- LÓGICA DE CÁLCULO MANTIDA ---
+        // --- LÓGICA DE CÁLCULO ---
         const calculateWarmup = (targetWeight) => {
           if (!targetWeight || targetWeight < 20) return [];
 
-          const startWeight = targetWeight < 70 ? 20 : 30;
+          const startWeight = 20;
+          const isLowWeight = targetWeight < 80;
 
+          // Se o peso alvo for muito baixo (<= peso inicial)
           if (targetWeight <= startWeight) {
              return [{
                 weight: startWeight,
-                reps: 15,
+                reps: isLowWeight ? 5 : 10, // Ajuste para <80kg
                 percent: Math.round((startWeight / targetWeight) * 100)
              }];
           }
@@ -415,12 +374,15 @@
           if (lastWarmup <= startWeight) {
              return [{
                 weight: startWeight,
-                reps: 15,
+                reps: isLowWeight ? 5 : 10,
                 percent: Math.round((startWeight / targetWeight) * 100)
              }];
           }
 
-          const minSteps = targetWeight > 70 ? 3 : 1; 
+          // 2. Definir Mínimo de Séries
+          // Se < 80kg: min 3 séries (1 start + 2 jumps)
+          // Se >= 80kg: min 4 séries (1 start + 3 jumps)
+          const minSteps = isLowWeight ? 2 : 3; 
 
           let finalGap = targetWeight - lastWarmup;
           let range = lastWarmup - startWeight;
@@ -451,7 +413,8 @@
                 
                 if (i === steps) rounded = lastWarmup;
 
-                if (targetWeight > 70 && rounded <= warmupWeights[warmupWeights.length - 1]) {
+                // Evitar pesos duplicados e respeitar mínimo de séries
+                if (targetWeight > 80 && rounded <= warmupWeights[warmupWeights.length - 1]) {
                     let fineRounded = roundToFive(val);
                     if (fineRounded > warmupWeights[warmupWeights.length - 1]) {
                         rounded = fineRounded;
@@ -469,13 +432,16 @@
              }
           }
           
-          if (targetWeight > 70 && warmupWeights.length < 4) {
+          // Fallback final para garantir séries visuais (3 para <80, 4 para >=80)
+          const minTotalSets = isLowWeight ? 3 : 4;
+          if (warmupWeights.length < minTotalSets) {
               warmupWeights = [startWeight];
-              let needed = 3;
+              let needed = minTotalSets - 1; // Já temos o start
               let localStep = (lastWarmup - startWeight) / needed;
               for(let k=1; k<=needed; k++) {
                   warmupWeights.push(Math.round((startWeight + localStep * k)/2.5)*2.5);
               }
+              // Garante que o último seja exatamente o LastWarmup
               warmupWeights[warmupWeights.length-1] = lastWarmup;
           }
 
@@ -483,11 +449,20 @@
              let reps = 1;
              const setNum = i + 1;
              
-             if (setNum === 1) reps = 15;
-             else if (setNum === 2) reps = 5;
-             else if (setNum === 3) reps = 3;
-             else if (setNum === 4) reps = 2;
-             else reps = 1;
+             if (isLowWeight) {
+                 // Lógica para < 80kg
+                 if (setNum === 1) reps = 5;
+                 else if (setNum === 2) reps = 3;
+                 else if (setNum === 3) reps = 2;
+                 else reps = 1;
+             } else {
+                 // Lógica para >= 80kg
+                 if (setNum === 1) reps = 10;
+                 else if (setNum === 2) reps = 5;
+                 else if (setNum === 3) reps = 3;
+                 else if (setNum === 4) reps = 2;
+                 else reps = 1;
+             }
 
              return {
                 weight: w,
@@ -501,19 +476,10 @@
           if (workLoad && parseFloat(workLoad) > 0) {
             const calculated = calculateWarmup(parseFloat(workLoad));
             setSets(calculated);
-
-            // Lógica Padrão de Elite (Pesado)
-            if (exercise === 'terra') {
-              const backoffWeight = roundToTen(parseFloat(workLoad) * 0.8);
-              setBackoffSets({ weight: backoffWeight, sets: 2, reps: 5 });
-            } else {
-              setBackoffSets(null);
-            }
           } else {
             setSets([]);
-            setBackoffSets(null);
           }
-        }, [workLoad, exercise]);
+        }, [workLoad]);
 
         const toggleSet = (index) => {
           if (completed.includes(index)) {
@@ -547,7 +513,7 @@
                   <h1
                     className={`text-4xl font-black tracking-tighter mb-0 ${themeColor.text}`}
                   >
-                    FLX Calc
+                    SHEIKO
                   </h1>
                   <p className='text-black text-sm font-bold tracking-widest'>
                     Protocolo de Elite
@@ -557,27 +523,6 @@
                   <Dumbbell className='w-6 h-6' strokeWidth={2} />
                 </div>
               </header>
-
-              {/* Seletor de Exercício (Simplificado - Todos são "Pesados") */}
-              <div className='mb-8'>
-                <label className='block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2'>
-                  Exercício
-                </label>
-                <div className='grid grid-cols-1 relative'>
-                  <select
-                    value={exercise}
-                    onChange={(e) => setExercise(e.target.value)}
-                    className={`appearance-none w-full bg-gray-50 border-2 border-gray-200 text-xl font-bold p-4 rounded-xl focus:outline-none focus:${themeColor.border} transition-colors cursor-pointer text-black`}
-                  >
-                    {allExercises.map((ex) => (
-                      <option key={ex.id} value={ex.id}>
-                        {ex.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none' />
-                </div>
-              </div>
 
               {/* Input Carga */}
               <div className='mb-10'>
@@ -598,15 +543,15 @@
                   </span>
                 </div>
 
-                {workLoad &&
-                  parseFloat(workLoad) < 70 &&
-                  parseFloat(workLoad) > 0 && (
+                {workLoad && parseFloat(workLoad) > 0 && (
                     <div
                       className={`flex items-center gap-2 mt-2 ${themeColor.text} text-xs font-medium ${themeColor.bgLight} p-2 rounded-lg`}
                     >
                       <AlertCircle size={14} />
                       <span>
-                        Carga menor que 70kg: Início ajustado para 20kg.
+                        {parseFloat(workLoad) < 80 
+                          ? "Carga < 80kg: Início 20kg (5 reps)." 
+                          : "Carga ≥ 80kg: Início 20kg (10 reps)."}
                       </span>
                     </div>
                   )}
@@ -760,9 +705,7 @@
                         <div
                           className={`text-xs font-bold uppercase tracking-widest ${themeColor.subText} mb-1`}
                         >
-                          {exercise === 'terra'
-                            ? '1 Série Pesada'
-                            : '5 Séries de Trabalho'}
+                          5 Séries de Trabalho
                         </div>
                         <div className='flex items-baseline gap-2'>
                           <span className='text-5xl font-black text-black tracking-tighter'>
@@ -775,39 +718,10 @@
                         <div
                           className={`mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold ${themeColor.text} shadow-sm border ${themeColor.borderLight}`}
                         >
-                          {exercise === 'terra'
-                            ? '1 x 5 Reps'
-                            : '5 x 5 Reps'}
+                          5 x 5 Reps
                         </div>
                       </div>
                     </div>
-
-                    {/* Backoff */}
-                    {backoffSets && (
-                      <div className='mt-4'>
-                        <div className='flex items-center gap-4 p-5 rounded-xl border-l-4 border-gray-300 bg-gray-50'>
-                          <div className='p-2 bg-white rounded-lg shadow-sm'>
-                            <Layers size={20} className='text-gray-400' />
-                          </div>
-                          <div>
-                            <div className='text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5'>
-                              Backoff Sets (80%)
-                            </div>
-                            <div className='flex items-baseline gap-2'>
-                              <span className='text-2xl font-black text-gray-700'>
-                                {backoffSets.weight}kg
-                              </span>
-                              <span className='text-sm font-medium text-gray-400'>
-                                x 5 reps
-                              </span>
-                            </div>
-                            <div className='text-xs font-bold text-gray-500 mt-1'>
-                              Realizar {backoffSets.sets} séries
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -817,7 +731,7 @@
       };
 
       const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<FLXCalc />);
+      root.render(<SheikoApp />);
     </script>
     
     <script>
