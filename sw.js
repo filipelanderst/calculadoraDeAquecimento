@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sheiko-app-v3.0'; // ATENÇÃO: Mudei o nome para forçar a limpeza do cache antigo
+const CACHE_NAME = 'sheiko-app-v3.2'; // ATENÇÃO: Mudei o nome para forçar a limpeza do cache antigo
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keyList) => {
       return Promise.all(
         keyList.map((key) => {
-          // Se o nome do cache for diferente da versão atual (v3.0), apaga ele
+          // Se o nome do cache for diferente da versão atual, apaga ele
           if (key !== CACHE_NAME) {
             console.log('[Service Worker] Removing old cache:', key);
             return caches.delete(key);
