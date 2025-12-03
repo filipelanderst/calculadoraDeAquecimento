@@ -14,8 +14,8 @@
     
     <title>SHEIKO - Protocolo de Elite</title>
     
-    <!-- QUERY STRING (?v=3.2) ADICIONADA PARA FORÇAR ATUALIZAÇÃO DO NOME -->
-    <link rel="manifest" href="manifest.json?v=3.2">
+    <!-- QUERY STRING (?v=3.3) ATUALIZADA -->
+    <link rel="manifest" href="manifest.json?v=3.3">
     
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Calculadora de Carga e Aquecimento para Powerlifting e Musculação">
@@ -265,11 +265,12 @@
           return Math.round(rawWeight / 2) * 2;
         };
 
+        // --- PORCENTAGENS ATUALIZADAS AQUI ---
         const repRanges = [
-          { reps: 5, percent: 77.5 },
+          { reps: 5, percent: 80 },
           { reps: 8, percent: 75 },
-          { reps: 12, percent: 72.5 },
-          { reps: 15, percent: 70 },
+          { reps: 12, percent: 70 },
+          { reps: 15, percent: 65 },
         ];
 
         return (
@@ -560,7 +561,8 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=3.2')
+                // Versão atualizada para v3.3
+                navigator.serviceWorker.register('./sw.js?v=3.3')
                     .then(reg => {
                         console.log('SW registrado com sucesso:', reg.scope);
                         reg.update();
