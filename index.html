@@ -378,9 +378,10 @@
           
           const startWeight = 20;
           
-          // Se a carga for igual ao peso da barra, não há aquecimento a fazer além da própria barra
+          // Se a carga for igual ao peso da barra
           if (targetWeight === startWeight) {
-             return [{ weight: startWeight, reps: 5, percent: 100 }];
+             // Alterado para 10 reps para consistência com a regra "A primeira sempre será 10"
+             return [{ weight: startWeight, reps: 10, percent: 100 }];
           }
 
           const mod = targetWeight % 10;
@@ -400,7 +401,8 @@
               if (lastWarmup < startWeight) continue;
               
               if (lastWarmup === startWeight) {
-                  return [{ weight: startWeight, reps: targetWeight < 80 ? 5 : 10, percent: Math.round((startWeight/targetWeight)*100) }];
+                  // Alterado: Removemos a lógica ternária de < 80kg. Sempre 10 reps na primeira.
+                  return [{ weight: startWeight, reps: 10, percent: Math.round((startWeight/targetWeight)*100) }];
               }
 
               const dist = lastWarmup - startWeight;
@@ -435,23 +437,18 @@
                       currentSteps--;
                   }
                   
-                  // Aplica lógica de repetições
-                  const isLowWeight = targetWeight < 80;
+                  // Aplica lógica de repetições (ALTERADO: Decrescente estrito)
                   return weights.map((w, i) => {
                      let reps = 1;
                      const setNum = i + 1;
-                     if (isLowWeight) {
-                         if (setNum === 1) reps = 5;
-                         else if (setNum === 2) reps = 3;
-                         else if (setNum === 3) reps = 2;
-                         else reps = 1;
-                     } else {
-                         if (setNum === 1) reps = 10;
-                         else if (setNum === 2) reps = 5;
-                         else if (setNum === 3) reps = 3;
-                         else if (setNum === 4) reps = 2;
-                         else reps = 1;
-                     }
+                     
+                     // NOVA LÓGICA: Sempre 10, 5, 3, 2, 1...
+                     if (setNum === 1) reps = 10;
+                     else if (setNum === 2) reps = 5;
+                     else if (setNum === 3) reps = 3;
+                     else if (setNum === 4) reps = 2;
+                     else reps = 1;
+                     
                      return { weight: w, reps: reps, percent: Math.round((w / targetWeight) * 100) };
                   });
               }
@@ -508,12 +505,7 @@
                       />
                       <span className='absolute right-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-black transition-colors'>KG</span>
                     </div>
-                    {workLoad && parseFloat(workLoad) > 0 && (
-                        <div className="flex items-center gap-2 mt-2 text-blue-600 text-xs font-medium bg-blue-50 p-2 rounded-lg">
-                          <AlertCircle size={14} />
-                          <span>{parseFloat(workLoad) < 80 ? "Carga < 80kg: Início 20kg (5 reps)." : "Carga ≥ 80kg: Início 20kg (10 reps)."}</span>
-                        </div>
-                      )}
+                    {/* REMOVIDO: Bloco de alerta condicional sobre < 80kg */}
                   </div>
 
                   {sets.length > 0 && <WarmupChart sets={sets} workLoad={workLoad} />}
@@ -606,3 +598,4 @@
     </script>
   </body>
 </html>
+
